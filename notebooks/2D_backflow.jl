@@ -50,6 +50,7 @@ k=K(N=49)
 L=2*pi # also not sure of the maths here; k space normally +- pi/a
 
 # ╔═╡ ba770141-452e-4f50-b99c-adadf53c8aca
+# Random coordinates for the Fermion particles, in the 2D slab from -L/2->L/2
 r=-L/2 .+ rand(49,2)*L
 
 # ╔═╡ 1b11d4bf-0224-4191-9af9-ac6fe0ea3428
@@ -98,11 +99,14 @@ end
 # ╔═╡ 1b671e19-3260-442a-8860-a1622302ab72
 @time det(An)
 
+# ╔═╡ cb1d87a7-85f7-4117-89f3-311889704b8e
+abs(det(An))
+
 # ╔═╡ 11e9983c-e6e9-4134-a7fd-6313bebfc901
 # scan across x and y for the first particle and try and sample the wavefunction
 # This is where the computation happens!
 
-function sampleimg(;S=100, a=0.4)
+function sampleimg(;S=100, a=0.0)
 	# S size in X and Y to raster across
 	# S=100 ==> 8.8 s with backflow, on my M1
 	#       ==> 2.6 s with no backflow
@@ -129,10 +133,13 @@ function renderimg(img; S=100)
 	n = RGB{N0f8}(0.0, 0.0, 1.0)  
 	
 	rgb = similar(img, RGB{N0f8})
+
+	MAX=maximum(abs.(img))
 	
 	# Broadcast the conditional logic and color assignment
   	for i in eachindex(img)
     	rgb[i] = real(img[i]) > 0 ? p : n
+		rgb[i]*= (abs(img[i])/MAX)^(0.2) # map to 0..1, then take 1/x power to squash up to 1. Otherwise everything is BLACK except for a small region.
   	end
 
 	if (S>50) # only plot electron positions if there is space
@@ -153,7 +160,7 @@ function renderimg(img; S=100)
 end
 
 # ╔═╡ 360036c6-a41b-401e-b18c-57b227348f92
-@time img=sampleimg(S=200)
+@time img=sampleimg(S=200, a=0.45)
 
 # ╔═╡ ea420550-db02-4541-8f0a-dcd6ea46889c
 renderimg(img,S=200)
@@ -162,9 +169,9 @@ renderimg(img,S=200)
 # ╠═╡ disabled = true
 #=╠═╡
 begin
-	S=10
+	S=100
 		images=[]
-	for a in 0.5 #0:0.05:1.5
+	for a in 0:0.1:1.1 # 0:0.05:1.5
 		image=renderimg(sampleimg(S=S, a=a),S=S)
 		append!(images,[image])
 	end
@@ -175,7 +182,7 @@ end
 
 # ╔═╡ 7e190408-a044-44a7-84d3-df64c3810a95
 #=╠═╡
-images[10]
+images[3]
   ╠═╡ =#
 
 # ╔═╡ 5df72668-63da-4bea-ab97-f691d5224b70
@@ -192,7 +199,7 @@ Array(images)
 #=╠═╡
 for (f,img) in enumerate(images)
 	fs=string(f, pad=4)
-	print(fs)
+	print("Saving frame ",fs,"\n")
 	ImageMagick.save("anim$fs.gif",img)
 end
   ╠═╡ =#
@@ -1347,6 +1354,7 @@ version = "17.4.0+2"
 # ╠═6ee407dc-d4e9-4ad5-9c4b-ab1c8ba07b88
 # ╠═46eacdb8-a0f8-4b9f-86e4-a31fa09e4ffb
 # ╠═1b671e19-3260-442a-8860-a1622302ab72
+# ╠═cb1d87a7-85f7-4117-89f3-311889704b8e
 # ╠═11e9983c-e6e9-4134-a7fd-6313bebfc901
 # ╠═b1c28ef5-c17c-4668-b06a-3b5ffaf6ae7b
 # ╠═360036c6-a41b-401e-b18c-57b227348f92

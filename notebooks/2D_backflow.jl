@@ -58,16 +58,31 @@ r=-L/2 .+ rand(49,2)*L
 # ╔═╡ 6ee407dc-d4e9-4ad5-9c4b-ab1c8ba07b88
 function A(r,k;N=49, a=0.0)
 	A=zeros(ComplexF64, N,N)
+	rkj=zeros(Float64,N,2)
+	ηrkj=zeros(Float64,N)
+	rj=zeros(Float64,1,2)
+
+	
 	for j in 1:N
 		if a==0.0 # No backflow, trivial case. Don't really need to do the full matrix det, but simplifies the code + acts as a crosscheck to do it
 			rj=r[j,:]
 		else
-			rj=r[j,:]
-			for k in 1:N
-				if k!=j
-					rj+=η(norm(r[j,:]-r[k,:]), a=a)*(r[j,:]-r[k,:]) # HOT LOOP, optimise me
-				end
-			end
+
+# Attempt at vectorisation. Twice as fast.
+# Very buggy to write, and difficult to reason with.
+			rkj=r[j,:]' .- r[:,:]
+			ηrkj=η.(sqrt.(sum(abs2.(rkj), dims=2)), a=a)
+			ηrkj[j]=0.0 # avoid self-interaction
+			rj= r[j,:]' .+ sum( ηrkj .* rkj, dims=1) 
+
+ #Original explicit for-loop with catch version
+# 			rj=r[j,:]
+#			for k in 1:N
+#				if k!=j
+#					rj+=η(norm(r[j,:]-r[k,:]), a=a)*(r[j,:]-r[k,:]) # HOT LOOP, optimise me
+#				end
+#			end
+			
 		end
 		
 		for i in 1:N
@@ -78,10 +93,10 @@ return A
 end
 
 # ╔═╡ 46eacdb8-a0f8-4b9f-86e4-a31fa09e4ffb
-An=A(r,k)
+@time An=A(r,k, a=0.5)
 
 # ╔═╡ 1b671e19-3260-442a-8860-a1622302ab72
-det(An)
+@time det(An)
 
 # ╔═╡ 11e9983c-e6e9-4134-a7fd-6313bebfc901
 # scan across x and y for the first particle and try and sample the wavefunction
@@ -120,57 +135,77 @@ function renderimg(img; S=100)
     	rgb[i] = real(img[i]) > 0 ? p : n
   	end
 
+	if (S>50) # only plot electron positions if there is space
 	# plot particle positions as dots
 	# This would be a lot easier if I was just using a plotting package
 	# convert coordinates of particles into x,y within image
-	particlecoords = S * (r.+ L/2) / L .|> ceil .|> Int
-	for r in eachrow(particlecoords)
-#		print(r," ",r[1]," ",r[2],"\n")
-		rgb[r[1],r[2]]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn		
-		rgb[r[1]+1,r[2]]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn
-		rgb[r[1],r[2]+1]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn		
-		rgb[r[1]+1,r[2]+1]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn
+		particlecoords = S * (r.+ L/2) / L .|> ceil .|> Int
+		for r in eachrow(particlecoords)
+#			print(r," ",r[1]," ",r[2],"\n")
+			rgb[r[1],r[2]]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn		
+			rgb[r[1]+1,r[2]]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn
+			rgb[r[1],r[2]+1]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn		
+			rgb[r[1]+1,r[2]+1]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn
+		end
 	end
 	
 	imresize(rgb, (500,500))
 end
 
-# ╔═╡ a3cbbab5-5efd-4fe2-850e-00011495aa65
-renderimg(sampleimg(S=100),S=100)
+# ╔═╡ 360036c6-a41b-401e-b18c-57b227348f92
+@time img=sampleimg(S=200)
+
+# ╔═╡ ea420550-db02-4541-8f0a-dcd6ea46889c
+renderimg(img,S=200)
 
 # ╔═╡ 71bb8396-107d-45f1-862a-f032fd04df12
+# ╠═╡ disabled = true
+#=╠═╡
 begin
-	S=250
+	S=10
 		images=[]
-	for a in 0:0.05:1.5
+	for a in 0.5 #0:0.05:1.5
 		image=renderimg(sampleimg(S=S, a=a),S=S)
 		append!(images,[image])
 	end
 	
 		images
 end
+  ╠═╡ =#
 
 # ╔═╡ 7e190408-a044-44a7-84d3-df64c3810a95
+#=╠═╡
 images[10]
+  ╠═╡ =#
 
 # ╔═╡ 5df72668-63da-4bea-ab97-f691d5224b70
+#=╠═╡
 mosaicview(Array(images))
+  ╠═╡ =#
 
 # ╔═╡ 2c8839e6-f75f-4f60-8b92-67e17ea945ba
+#=╠═╡
 Array(images)
+  ╠═╡ =#
 
 # ╔═╡ 10e7a71c-0ee4-4061-8635-fd5b5f4d4a20
+#=╠═╡
 for (f,img) in enumerate(images)
 	fs=string(f, pad=4)
 	print(fs)
 	ImageMagick.save("anim$fs.gif",img)
 end
+  ╠═╡ =#
 
 # ╔═╡ 0d0e8b09-fa27-45b7-ade7-0aeb68c4e42e
+#=╠═╡
 imgarray=reshape(images,31,:)
+  ╠═╡ =#
 
 # ╔═╡ 11e02299-c1cc-4496-8266-c552c1645139
+#=╠═╡
 size(imgarray)
+  ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1314,7 +1349,8 @@ version = "17.4.0+2"
 # ╠═1b671e19-3260-442a-8860-a1622302ab72
 # ╠═11e9983c-e6e9-4134-a7fd-6313bebfc901
 # ╠═b1c28ef5-c17c-4668-b06a-3b5ffaf6ae7b
-# ╠═a3cbbab5-5efd-4fe2-850e-00011495aa65
+# ╠═360036c6-a41b-401e-b18c-57b227348f92
+# ╠═ea420550-db02-4541-8f0a-dcd6ea46889c
 # ╠═71bb8396-107d-45f1-862a-f032fd04df12
 # ╠═7e190408-a044-44a7-84d3-df64c3810a95
 # ╠═5df72668-63da-4bea-ab97-f691d5224b70

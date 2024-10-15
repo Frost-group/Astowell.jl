@@ -20,6 +20,7 @@ KMAX=4 # really this should decide N below
 N=49
 
 # ╔═╡ b3fd6c65-4906-4835-8b99-beb8bc09051c
+"""Build a two dimensional reciprocal space. The 2008 PRB chooses N=49 as it makes a nice regular KMAX<=4 space in 2D."""
 function K(;N=49)
 	k=zeros(N,2) # kludge static allocation
 	n=1

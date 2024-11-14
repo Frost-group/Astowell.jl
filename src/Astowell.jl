@@ -1,5 +1,7 @@
 module Astowell
 
-# Write your package code here.
+include("KrugerZaanen.jl")
+
+export sampleimg, renderimg, K, randomcoords, η, A
 
 end

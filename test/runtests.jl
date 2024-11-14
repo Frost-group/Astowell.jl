@@ -2,5 +2,6 @@ using Astowell
 using Test
 
 @testset "Astowell.jl" begin
-    # Write your tests here.
+    @testset "KrugerZaanen" begin include("KrugerZaanen.jl") end
+    
 end

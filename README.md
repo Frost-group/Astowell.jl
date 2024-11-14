@@ -1,5 +1,7 @@
 # Astowell.jl
 
+[![Build Status](https://github.com/jarvist/Astowell.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/jarvist/Astowell.jl/actions/workflows/CI.yml?query=branch%3Amain)
+
 In the far East Reach, beyond the last land, there are the fractal Fermion nodes. 
 
 ![No Backflow, noninteracting Fermions.](./no_backflow.png) ![Backflow](./backflow.png)
@@ -12,3 +14,4 @@ Currently there is a notebook which implements a minimal Julia code which reprod
 > Frank Krüger and Jan Zaanen. 
 > Phys. Rev. B 78, 035104 – Published 3 July 2008. 
 > https://doi.org/10.1103/PhysRevB.78.035104
+

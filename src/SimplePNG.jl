@@ -21,12 +21,12 @@ function write_ppm(filename, img::Array{RGB,2})
         
         # RGB data (16-bit values in binary)
         for y in 1:height, x in 1:width
-            # Convert 0-1 float values to 16-bit integers
-            r = round(UInt16, clamp(img[y,x].r, 0, 1) * 65535)
-            g = round(UInt16, clamp(img[y,x].g, 0, 1) * 65535)
-            b = round(UInt16, clamp(img[y,x].b, 0, 1) * 65535)
+            # Convert 0-1 float values to 16-bit integers; bswap to Big Endian for PPM
+            r = round(UInt16, clamp(img[y,x].r, 0, 1) * 65535) |> bswap
+            g = round(UInt16, clamp(img[y,x].g, 0, 1) * 65535) |> bswap
+            b = round(UInt16, clamp(img[y,x].b, 0, 1) * 65535) |> bswap
             
-            write(io, r, g, b)  # Endianess?!
+            write(io, r, g, b)
         end
     end
 end

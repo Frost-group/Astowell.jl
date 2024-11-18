@@ -1,4 +1,4 @@
-using LinearAlgebra, Images
+using LinearAlgebra
 
 # 2D backflow wavefunction node visualiser
 # Following PRB 78 035104 (2008) - Fermionic quantum criticality
@@ -74,8 +74,6 @@ function A(r,k;N=49, a=0.0)
 return A
 end
 
-
-
 # scan across x and y for the first particle and try and sample the wavefunction
 function sampleimg(r,k;S=100, a=0.0)
 	# S size in X and Y to raster across
@@ -98,35 +96,41 @@ function sampleimg(r,k;S=100, a=0.0)
 	return img	
 end
 
+"""
+Render the wavefunction as an RGB PNG file.
+- Red/blue indicates sign of wavefunction
+- Brightness indicates magnitude (with POW controlling contrast)
+- Yellow dots show particle positions
+Returns: Height × Width × 3 array of Float64 values between 0 and 1
+"""
 function renderimg(r,img; S=100, POW=0.07)
-	p = RGB{N0f8}(1.0, 0.0, 0.0) 
-	n = RGB{N0f8}(0.0, 0.0, 1.0)  
-	
-	rgb = similar(img, RGB{N0f8})
+    # Define colors
+    red = RGB(1.0, 0.0, 0.0)    # positive values
+    blue = RGB(0.0, 0.0, 1.0)   # negative values
+    yellow = RGB(1.0, 1.0, 0.0) # particles
+    
+    rgb = Array{RGB}(undef, S+1, S+1)
+    MAX = maximum(abs.(img))
+    
+    # Render wavefunction
+    for i in 1:S+1, j in 1:S+1
+        val = (abs(img[i,j])/MAX)^POW
+        rgb[i,j] = real(img[i,j]) > 0 ? val * red : val * blue
+    end
 
-	MAX=maximum(abs.(img))
-	
-	# Broadcast the conditional logic and color assignment
-  	for i in eachindex(img)
-    	rgb[i] = real(img[i]) > 0 ? p : n
-		rgb[i]*= (abs(img[i])/MAX)^POW # map to 0..1, then take 1/x power to squash up to 1. Otherwise everything is BLACK except for a small region.
-  	end
-
-	if (S>50) # only plot electron positions if there is space
-	# plot particle positions as dots
-	# This would be a lot easier if I was just using a plotting package
-	# convert coordinates of particles into x,y within image
-		particlecoords = S * (r.+ L/2) / L .|> ceil .|> Int
-		for r in eachrow(particlecoords)
-#			print(r," ",r[1]," ",r[2],"\n")
-			rgb[r[1],r[2]]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn		
-			rgb[r[1]+1,r[2]]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn
-			rgb[r[1],r[2]+1]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn		
-			rgb[r[1]+1,r[2]+1]=RGB{N0f8}(1.0,1.0,0.0) # dot for the particle posn
-		end
-	end
-	
-	imresize(rgb, (500,500))
-end
-
+    # Add particle positions
+    if S > 50
+        particlecoords = S * (r .+ L/2) / L .|> ceil .|> Int
+        for r in eachrow(particlecoords)
+            for dx in 0:1, dy in 0:1
+                x, y = r[1]+dx, r[2]+dy
+                if 1 ≤ x ≤ S+1 && 1 ≤ y ≤ S+1
+                    rgb[x,y] = yellow
+                end
+            end
+        end
+    end
+    
+    return rgb
+end 
 

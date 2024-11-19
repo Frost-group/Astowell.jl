@@ -73,7 +73,27 @@ function A(r,k;N=49, a=0.0)
 return A
 end
 
+# a=0.4, start to see nodes appearing around particle posn
+# a=0.7, about 50% smooth, 50% fractal
 # scan across x and y for the first particle and try and sample the wavefunction
+"""
+    sampleimg(r, k; S=100, a=0.0)
+
+Sample the backflow wavefunction by scanning the position of the first particle
+across a 2D grid while keeping other particles fixed.
+Function is now threaded 🚀
+
+# Arguments
+- `r`: Array of particle positions
+- `k`: Array of k-space points
+- `S`: Grid size for sampling (S×S points)
+- `a`: Backflow strength parameter
+    - a=0.0: No backflow (standard Slater determinant)
+    - a=0.4: Nodes start appearing around particle positions
+    - a=0.7: Approximately 50% smooth, 50% fractal structure
+
+Returns a complex-valued S×S array containing the wavefunction values.
+"""
 function sampleimg(r, k; S=100, a=0.0)
     img = zeros(ComplexF64, S+1, S+1)
     xs = collect(enumerate(-L/2:L/S:L/2))

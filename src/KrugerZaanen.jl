@@ -44,7 +44,6 @@ function A(r,k;N=49, a=0.0)
 	ηrkj=zeros(Float64,N)
 	rj=zeros(Float64,1,2)
 
-	
 	for j in 1:N
 		if a==0.0 # No backflow, trivial case. Don't really need to do the full matrix det, but simplifies the code + acts as a crosscheck to do it
 			rj=r[j,:]
@@ -75,25 +74,23 @@ return A
 end
 
 # scan across x and y for the first particle and try and sample the wavefunction
-function sampleimg(r,k;S=100, a=0.0)
-	# S size in X and Y to raster across
-	# S=100 ==> 8.8 s with backflow, on my M1
-	#       ==> 2.6 s with no backflow
-	
-	img=zeros(ComplexF64, S+1,S+1)
-	for (i,x) in enumerate(-L/2:L/S:L/2) 
-		r[1,1]=x
-		for (j,y) in enumerate(-L/2:L/S:L/2)
-			r[1,2]=y
-	
-			An=A(r,k, a=a)
-			# a=0.4, start to see nodes appearing around particle posn
-			# a=0.7, about 50% smooth, 50% fractal
-			img[i,j]=det(An)
-		end
-	end
-	
-	return img	
+function sampleimg(r, k; S=100, a=0.0)
+    img = zeros(ComplexF64, S+1, S+1)
+    xs = collect(enumerate(-L/2:L/S:L/2))
+    
+    Threads.@threads for (i,x) in xs
+        # Create thread-local copy of coordinates
+        r_local = copy(r)
+        r_local[1,1] = x
+        
+        for (j,y) in enumerate(-L/2:L/S:L/2)
+            r_local[1,2] = y
+            An = A(r_local, k, a=a)
+            img[i,j] = det(An)
+        end
+    end
+    
+    return img
 end
 
 """

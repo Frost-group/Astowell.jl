@@ -1,5 +1,8 @@
 module Astowell
 
+using Random
+Random.seed!(0xDEADBEEF) # reproducible runs
+
 include("SimplePNG.jl")
 include("KrugerZaanen.jl")
 

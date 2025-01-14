@@ -39,14 +39,15 @@ end
 η(r; a=1.0,r0=0.2)=a^3/(r^3+r0^3) # Backflow function
 
 function A(r,k;N=49, a=0.0)
-	A=zeros(ComplexF64, N,N)
+    A = Matrix{ComplexF64}(undef, N, N)  # Pre-allocate without zeros
+
 	rkj=zeros(Float64,N,2)
 	ηrkj=zeros(Float64,N)
 	rj=zeros(Float64,1,2)
 
 	for j in 1:N
 		if a==0.0 # No backflow, trivial case. Don't really need to do the full matrix det, but simplifies the code + acts as a crosscheck to do it
-			rj=r[j,:]
+			rj=@view r[j,:]
 		else
 
 # Attempt at vectorisation. Twice as fast.
@@ -67,7 +68,9 @@ function A(r,k;N=49, a=0.0)
 		end
 		
 		for i in 1:N
-			A[i,j]=exp(im*k[i,:]⋅rj) 
+#			A[i,j]=exp(im*k[i,:]⋅rj) # works! but is slow by a factor of 2
+           @inbounds phase = k[i,1]*rj[1] + k[i,2]*rj[2] # explicit phase calculation
+           @inbounds A[i,j] = exp(im*phase)  # exp seems faster than cospi+sinpi
 		end
 	end
 return A

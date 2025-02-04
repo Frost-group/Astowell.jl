@@ -5,14 +5,14 @@ using LinearAlgebra
 # https://doi.org/10.1103/PhysRevB.78.035104
 # Physics big love.
 
-KMAX=4 # really this should decide N below
-N=49
+#KMAX=4 # really this should decide N below
+#N=49
 
 # back to front to how we normally do it? K running from +- 4.0 currently
 L=2*pi # also not sure of the maths here; k space normally +- pi/a
 
 """Build a two dimensional reciprocal space. The 2008 PRB chooses N=49 as it makes a nice regular KMAX<=4 space in 2D."""
-function K(;N=49)
+function K(;N=49, KMAX=4)
 	k=zeros(N,2) # kludge static allocation
 	n=1
 
@@ -97,7 +97,7 @@ Function is now threaded 🚀
 
 Returns a complex-valued S×S array containing the wavefunction values.
 """
-function sampleimg(r, k; S=100, a=0.0)
+function sampleimg(r, k; N=49, S=100, a=0.0)
     img = zeros(ComplexF64, S+1, S+1)
     xs = collect(enumerate(-L/2:L/S:L/2))
     
@@ -108,7 +108,7 @@ function sampleimg(r, k; S=100, a=0.0)
         
         for (j,y) in enumerate(-L/2:L/S:L/2)
             r_local[1,2] = y
-            An = A(r_local, k, a=a)
+            An = A(r_local, k, N=N, a=a)
             img[i,j] = det(An)
         end
     end

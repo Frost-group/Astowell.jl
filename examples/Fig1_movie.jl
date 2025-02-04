@@ -42,8 +42,8 @@ println("# Imagemagick 'convert' PPM to PNG with text overlay")
 println("""for f in frames/*.ppm; do
     num=\$(basename \$f .ppm)
     frame=\${num##*_}
-    a=\$(printf "%.2f" \$(echo "scale=2; (\$frame - 1) * (1.0/$(frames-1))" | bc))
+    a=$(printf "%.4f" $(echo "scale=4; ( $frame - 1) * (1.0/ $(frames-1))" | bc -l)) 
+    echo "Frane: $(frame) Backflow: $a"   
     convert \$f -pointsize 36 -fill white -annotate +50+$(S-50) "a = \$a" \${f%.*}.png
 done""")
 println("ffmpeg -framerate 10 -i frames/backflow_%03d.png -c:v libx264 backflow.mp4")
-println("rm frames/*.ppm")

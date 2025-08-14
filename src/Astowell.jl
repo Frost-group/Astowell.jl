@@ -1,12 +1,13 @@
 module Astowell
 
 using Random
+
 Random.seed!(0xDEADBEEF) # reproducible runs
 
-include("SimplePNG.jl")
 include("KrugerZaanen.jl")
+include("SimplePPM.jl")
 
-export write_ppm, RGB
 export sampleimg, renderimg, K, randomcoords, η, A
+export write_ppm, RGB
 
 end

@@ -1,44 +1,39 @@
 using LinearAlgebra, SpecialPolynomials
 
-# Length is now adjusted in multiples of \sqrt{\frac{m \omega}{\hbar}}
-β = 1.0
-
-# Define particle number here of easier modification
-N = 6
-
-# Backflow parameters
-r0 = 0.05374
-a = -15.83
-
-# Define backflow function
-η(r) = a / (r^3 / r0^3 + 1)
 
 # Build quantum numbers grid
-function K(; KMAX=2)
-    k = zeros(N, 2) # kludge static allocation
+function Q(N, n_max)
+
+    # kludge static allocation
+    n_numbers = zeros(N, 2)
     n = 1
 
-    for kx ∈ 0:KMAX
-        for ky ∈ 0:KMAX
-            if kx^2 + ky^2 <= KMAX^2
-                k[n, 1] = kx
-                k[n, 2] = ky
+    for n_x ∈ 0:n_max
+        for n_y ∈ 0:n_max
+            if n_x + n_y <= n_max
+                n_numbers[n, 1] = n_x
+                n_numbers[n, 2] = n_y
 
                 n = n + 1
             end
         end
     end
 
-    return k
+    return n_numbers
 end
 
-# Random coordinates for the Fermion particles, in the 2D slab from -L/2->L/2 or smaller
-function randomcoords()
+# Random coordinates for the Fermion particles, in the 2D slab from -1/2->1/2, first one is not used
+function randomcoords(N=3)
     -1 / 2 .+ rand(N, 2)
 end
 
-function A(r, k)
-    A = Matrix{ComplexF64}(undef, N, N)  # Pre-allocate without zeros
+function A(r, k, a, r0, β, N)
+
+    # Define backflow function
+    η(r) = a / (r^3 / r0^3 + 1)
+
+    # Pre-allocate determinant without zeros
+    A = Matrix{ComplexF64}(undef, N, N)
 
     rkj = zeros(Float64, N, 2)
     ηrkj = zeros(Float64, N)
@@ -76,55 +71,43 @@ function A(r, k)
     return A
 end
 
-# a=0.4, start to see nodes appearing around particle posn
-# a=0.7, about 50% smooth, 50% fractal
-# scan across x and y for the first particle and try and sample the wavefunction
-"""
-    sampleimg(r, k)
+# Sample the wavefunction, length is now adjusted in multiples of \sqrt{\frac{m \omega}{\hbar}} via β
+function sampleimg(r, S; a=0.0, r0=1.0, β=1.0, n_max=1)
 
-Sample the backflow wavefunction by scanning the position of the first particle
-across a 2D grid while keeping other particles fixed.
-Function is now threaded 🚀
-
-# Arguments
-- `r`: Array of particle positions
-- `k`: Array of k-space points
-- `S`: Grid size for sampling (S×S points)
-- `a`: Backflow strength parameter
-    - a=0.0: No backflow (standard Slater determinant)
-    - a=0.4: Nodes start appearing around particle positions
-    - a=0.7: Approximately 50% smooth, 50% fractal structure
-
-Returns a complex-valued S×S array containing the wavefunction values.
-"""
-function sampleimg(r, S)
+    # Allocate pixels
     img = zeros(ComplexF64, S + 1, S + 1)
     xs = collect(enumerate(-1/2:1/S:1/2))
-    k = K()
+
+    # Calculate particle number
+    N = size(r, 1)
+
+    # Calculate quantum numbers
+    q = Q(N, n_max)
 
     Threads.@threads for (i, x) in xs
+
         # Create thread-local copy of coordinates
         r_local = copy(r)
         r_local[1, 1] = x
 
         for (j, y) in enumerate(-1/2:1/S:1/2)
             r_local[1, 2] = y
-            An = A(r_local, k)
+
+            An = A(r_local, q, a, r0, β, N)
             img[i, j] = det(An)
         end
+
     end
 
     return img
 end
 
-"""
-Render the wavefunction as an RGB PNG file.
-- Red/blue indicates sign of wavefunction
-- Brightness indicates magnitude (with POW controlling contrast)
-- Yellow dots show particle positions
-Returns: Height × Width × 3 array of Float64 values between 0 and 1
-"""
-function renderimg(r, img, S, POW)
+# Render the sampled grid
+function renderimg(r, img, S; POW=1.0)
+
+    # Calculate particle number
+    N = size(r, 1)
+
     # Define colors
     red = RGB(1.0, 0.0, 0.0)    # positive values
     blue = RGB(0.0, 0.0, 1.0)   # negative values
@@ -133,21 +116,20 @@ function renderimg(r, img, S, POW)
     rgb = Array{RGB}(undef, S + 1, S + 1)
     MAX = maximum(abs.(img))
 
-    # Render wavefunction
+    # Render wavefunction (POW creates an unrealistic sampling approach, just for fun?)
     for i in 1:S+1, j in 1:S+1
         val = (abs(img[i, j]) / MAX)^POW
         rgb[i, j] = real(img[i, j]) > 0 ? val * red : val * blue
     end
 
-    # Add particle positions
-    if S > 50
-        particlecoords = S * (r .+ 1 / 2) .|> ceil .|> Int
-        for r in eachrow(particlecoords)
-            for dx in 0:1, dy in 0:1
-                x, y = r[1] + dx, r[2] + dy
-                if 1 ≤ x ≤ S + 1 && 1 ≤ y ≤ S + 1
-                    rgb[x, y] = yellow
-                end
+    # Add particle positions, except the first one
+    particlecoords = S * (r .+ 1 / 2) .|> ceil .|> Int
+
+    for n in 2:N
+        for dx in 0:1, dy in 0:1
+            x, y = particlecoords[n, 1] + dx, particlecoords[n, 2] + dy
+            if 1 ≤ x ≤ S + 1 && 1 ≤ y ≤ S + 1
+                rgb[x, y] = yellow
             end
         end
     end

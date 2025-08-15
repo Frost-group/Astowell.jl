@@ -2,8 +2,6 @@ module Astowell
 
 using Random
 
-Random.seed!(0xDEADBEEF) # reproducible runs
-
 include("KrugerZaanen.jl")
 include("SimplePPM.jl")
 

@@ -23,8 +23,8 @@ function Q(N, n_max)
 end
 
 # Random coordinates for the Fermion particles, in the 2D slab from -1/2->1/2, first one is not used
-function randomcoords(N=3)
-    -1 / 2 .+ rand(N, 2)
+function randomcoords(; N=3, scale=1.0)
+    scale * (-1 / 2 .+ rand(N, 2))
 end
 
 function A(r, k, a, r0, β, N)

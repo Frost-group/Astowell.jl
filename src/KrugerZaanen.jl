@@ -116,6 +116,30 @@ function sampleimg(r, k; N=49, S=100, a=0.0)
     return img
 end
 
+# if I were more clever, I could probably do this by generalising the above code to take arb
+# dimension images, and ask for a 1D slice, but HEY HO
+function sampleslice(r,k; N=49, S=100, a=0.0)
+    slice=zeros(ComplexF64, S+1)
+    r_local=copy(r)
+
+    x=0
+    r_local[1,1]=x
+
+    r_local[2,1]=0
+    r_local[2,2]=-L/4
+
+    r_local[2,1]=0
+    r_local[2,2]=L/4
+
+    for (j,y) in enumerate(-L/2:L/S:L/2)
+        r_local[1,2]=y
+        An=A(r_local,k,N=N,a=a)
+        slice[j]=det(An)
+    end
+
+    return slice
+end
+
 """
 Render the wavefunction as an RGB PNG file.
 - Red/blue indicates sign of wavefunction

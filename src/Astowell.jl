@@ -7,6 +7,6 @@ include("SimplePNG.jl")
 include("KrugerZaanen.jl")
 
 export write_ppm, RGB
-export sampleimg, renderimg, K, randomcoords, η, A
+export sampleimg, sampleslice, renderimg, K, randomcoords, η, A
 
 end
